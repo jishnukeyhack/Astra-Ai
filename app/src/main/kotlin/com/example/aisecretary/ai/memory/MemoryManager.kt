@@ -26,7 +26,7 @@ class MemoryManager(
     )
     
     // Pattern to detect JSON objects in text
-    private val jsonPattern = Pattern.compile("\\{[^{}]*\\}")
+    private val jsonPattern = Pattern.compile("\\{(?:[^{}]|\\{[^{}]*\\})*\\}")
 
     // Detect and extract memory from user message
     suspend fun detectAndExtractMemory(message: String): MemoryDetectionResult {
@@ -110,7 +110,7 @@ class MemoryManager(
             // Find potential JSON objects
             val matcher = jsonPattern.matcher(response)
             while (matcher.find()) {
-                val jsonString = matcher.group(0)
+                val jsonString = matcher.group(0) ?: continue
                 try {
                     val jsonObject = JSONObject(jsonString)
                     
@@ -128,14 +128,18 @@ class MemoryManager(
                         }
                         
                         if (memoryObj != null && memoryObj.has("key") && memoryObj.has("value")) {
-                            val key = memoryObj.getString("key")
-                            val value = memoryObj.getString("value")
-                            return Pair(key, value)
+                            val key = memoryObj.optString("key", "")
+                            val value = memoryObj.optString("value", "")
+                            if (key.isNotEmpty() && value.isNotEmpty()) {
+                                return Pair(key, value)
+                            }
                         } else if (jsonObject.has("key") && jsonObject.has("value")) {
                             // Direct key-value format
-                            val key = jsonObject.getString("key")
-                            val value = jsonObject.getString("value")
-                            return Pair(key, value)
+                            val key = jsonObject.optString("key", "")
+                            val value = jsonObject.optString("value", "")
+                            if (key.isNotEmpty() && value.isNotEmpty()) {
+                                return Pair(key, value)
+                            }
                         }
                     }
                 } catch (e: Exception) {

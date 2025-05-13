@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -61,6 +62,16 @@ class MemoryFragment : Fragment(), MemoryAdapter.MemoryItemListener {
         observeViewModel()
     }
     
+    override fun onDestroyView() {
+        try {
+            // Clean up any resources properly
+            // No need to explicitly remove lifecycle observers
+        } catch (e: Exception) {
+            // Ignore exceptions during cleanup
+        }
+        super.onDestroyView()
+    }
+    
     private fun setupListeners() {
         // Search functionality
         editTextSearch.setOnEditorActionListener { _, _, _ ->
@@ -89,6 +100,16 @@ class MemoryFragment : Fragment(), MemoryAdapter.MemoryItemListener {
                     textViewEmptyState.visibility = View.VISIBLE
                 } else {
                     textViewEmptyState.visibility = View.GONE
+                }
+            }
+        }
+        
+        // Observe error messages
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.error.collectLatest { errorMessage ->
+                if (errorMessage != null) {
+                    // Show error in toast or snackbar
+                    Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
                 }
             }
         }

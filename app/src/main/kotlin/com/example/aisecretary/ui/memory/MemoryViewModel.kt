@@ -23,17 +23,26 @@ class MemoryViewModel(application: Application) : AndroidViewModel(application) 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
     
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
+    
     init {
         loadMemories()
     }
     
     private fun loadMemories() {
         viewModelScope.launch {
-            val query = searchQuery.value
-            if (query.isBlank()) {
-                _memories.value = database.memoryFactDao().getAllMemoryFacts().first()
-            } else {
-                _memories.value = database.memoryFactDao().searchMemoryFacts(query).first()
+            try {
+                val query = searchQuery.value
+                if (query.isBlank()) {
+                    _memories.value = database.memoryFactDao().getAllMemoryFacts().first()
+                } else {
+                    _memories.value = database.memoryFactDao().searchMemoryFacts(query).first()
+                }
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = "Failed to load memories: ${e.message}"
+                _memories.value = emptyList()
             }
         }
     }
@@ -45,15 +54,25 @@ class MemoryViewModel(application: Application) : AndroidViewModel(application) 
     
     fun deleteMemory(id: Long) {
         viewModelScope.launch {
-            memoryManager.deleteMemory(id)
-            loadMemories()
+            try {
+                memoryManager.deleteMemory(id)
+                loadMemories()
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = "Failed to delete memory: ${e.message}"
+            }
         }
     }
     
     fun clearAllMemories() {
         viewModelScope.launch {
-            memoryManager.clearAllMemory()
-            _memories.value = emptyList()
+            try {
+                memoryManager.clearAllMemory()
+                _memories.value = emptyList()
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = "Failed to clear memories: ${e.message}"
+            }
         }
     }
     
@@ -67,8 +86,13 @@ class MemoryViewModel(application: Application) : AndroidViewModel(application) 
         )
         
         viewModelScope.launch {
-            database.memoryFactDao().insertMemoryFact(memoryFact)
-            loadMemories()
+            try {
+                database.memoryFactDao().insertMemoryFact(memoryFact)
+                loadMemories()
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = "Failed to save memory: ${e.message}"
+            }
         }
     }
 }

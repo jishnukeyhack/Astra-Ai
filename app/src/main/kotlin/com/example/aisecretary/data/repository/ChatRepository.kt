@@ -35,13 +35,14 @@ class ChatRepository(
             )
         }
         
-        // Existing memory-enabled code...
+        // Check if the user message contains a memory request
         val memoryDetectionResult = memoryManager.detectAndExtractMemory(userMessage)
         
         if (memoryDetectionResult.wasMemoryDetected) {
             return Result.success("I've remembered that ${memoryDetectionResult.memoryKey} is ${memoryDetectionResult.memoryValue}.")
         }
 
+        // If no memory request in user message, proceed with normal processing
         val recentMessages = messageDao.getAllMessages().first().takeLast(10)
         val relevantMemory = memoryManager.getRelevantMemory(userMessage)
         
@@ -50,10 +51,43 @@ class ChatRepository(
             memoryFacts = relevantMemory
         )
 
-        return llamaClient.sendMessage(
+        // Send message to LLM
+        val llmResult = llamaClient.sendMessage(
             message = userMessage,
             context = context
         )
+        
+        // Check if the response contains a memory instruction (like JSON)
+        if (llmResult.isSuccess) {
+            val response = llmResult.getOrNull() ?: return llmResult
+            
+            // Analyze the LLM response for memory instructions
+            val responseMemoryResult = memoryManager.detectAndExtractMemoryFromResponse(response)
+            
+            // If memory was detected in the response, we'll still return the original response
+            // but the memory has now been saved to the database
+            return if (responseMemoryResult.wasMemoryDetected && responseMemoryResult.isFromJson) {
+                // For JSON memory detection, we might want to clean up the response 
+                // by removing the raw JSON to make it more readable
+                val cleanedResponse = cleanJsonFromResponse(response)
+                Result.success(cleanedResponse)
+            } else {
+                // Return the original response
+                llmResult
+            }
+        }
+        
+        return llmResult
+    }
+    
+    // Remove JSON blocks from the response to make it more readable
+    private fun cleanJsonFromResponse(response: String): String {
+        // Improve pattern to find JSON blocks, even with nested structures
+        // This finds the outermost JSON object only
+        val jsonPattern = Regex("\\{(?:[^{}]|\\{[^{}]*\\})*\\}")
+        return response.replace(jsonPattern, "")
+            .replace(Regex("\\s+"), " ") // Clean up extra whitespace
+            .trim()
     }
 
     // Clear all messages

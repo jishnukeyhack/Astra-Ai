@@ -46,16 +46,26 @@ class MemoryAdapter(private val listener: MemoryItemListener) :
         private val dateFormat = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
         
         fun bind(memoryFact: MemoryFact) {
-            textViewKey.text = memoryFact.key
-            textViewValue.text = memoryFact.value
-            textViewDate.text = dateFormat.format(Date(memoryFact.timestamp))
-            
-            buttonEdit.setOnClickListener {
-                listener.onEditMemory(memoryFact.id, memoryFact.key, memoryFact.value)
-            }
-            
-            buttonDelete.setOnClickListener {
-                listener.onDeleteMemory(memoryFact.id)
+            try {
+                textViewKey.text = memoryFact.key.take(100) // Limit length to prevent display issues
+                textViewValue.text = memoryFact.value.take(500) // Limit length to prevent display issues
+                textViewDate.text = dateFormat.format(Date(memoryFact.timestamp))
+                
+                buttonEdit.setOnClickListener {
+                    listener.onEditMemory(memoryFact.id, memoryFact.key, memoryFact.value)
+                }
+                
+                buttonDelete.setOnClickListener {
+                    listener.onDeleteMemory(memoryFact.id)
+                }
+            } catch (e: Exception) {
+                // Handle any potential exceptions to prevent crashes
+                textViewKey.text = "Error displaying item"
+                textViewValue.text = "Please delete and recreate this memory item"
+                
+                buttonDelete.setOnClickListener {
+                    listener.onDeleteMemory(memoryFact.id)
+                }
             }
         }
     }
