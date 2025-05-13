@@ -1,0 +1,75 @@
+package com.example.aisecretary.ui.settings
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.aisecretary.settings.SettingsManager
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+
+class SettingsViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val settingsManager = SettingsManager(application)
+
+    private val _voiceInputEnabled = MutableStateFlow(settingsManager.isVoiceOutputEnabled())
+    val voiceInputEnabled: StateFlow<Boolean> = _voiceInputEnabled.asStateFlow()
+    
+    private val _voiceOutputEnabled = MutableStateFlow(settingsManager.isVoiceOutputEnabled())
+    val voiceOutputEnabled: StateFlow<Boolean> = _voiceOutputEnabled.asStateFlow()
+    
+    private val _memoryEnabled = MutableStateFlow(settingsManager.isMemoryEnabled())
+    val memoryEnabled: StateFlow<Boolean> = _memoryEnabled.asStateFlow()
+    
+    private val _settingsUpdated = MutableStateFlow(false)
+    val settingsUpdated: StateFlow<Boolean> = _settingsUpdated.asStateFlow()
+    
+    init {
+        observeSettings()
+    }
+    
+    private fun observeSettings() {
+        viewModelScope.launch {
+            settingsManager.voiceOutputEnabled.collectLatest {
+                _voiceInputEnabled.value = it
+            }
+        }
+        
+        viewModelScope.launch {
+            settingsManager.voiceOutputEnabled.collectLatest {
+                _voiceOutputEnabled.value = it
+            }
+        }
+        
+        viewModelScope.launch {
+            settingsManager.memoryEnabled.collectLatest {
+                _memoryEnabled.value = it
+            }
+        }
+    }
+    
+    fun setVoiceInputEnabled(enabled: Boolean) {
+        _voiceInputEnabled.value = enabled
+    }
+    
+    fun setVoiceOutputEnabled(enabled: Boolean) {
+        _voiceOutputEnabled.value = enabled
+    }
+    
+    fun setMemoryEnabled(enabled: Boolean) {
+        _memoryEnabled.value = enabled
+    }
+    
+    fun saveSettings() {
+        settingsManager.setVoiceOutputEnabled(_voiceInputEnabled.value)
+        settingsManager.setVoiceOutputEnabled(_voiceOutputEnabled.value)
+        settingsManager.setMemoryEnabled(_memoryEnabled.value)
+        _settingsUpdated.value = true
+    }
+    
+    fun resetSettingsUpdatedFlag() {
+        _settingsUpdated.value = false
+    }
+}

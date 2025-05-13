@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">AI Secretary</string>
+    <string name="welcome_message">Welcome to your AI-powered personal secretary!</string>
+    <string name="input_hint">Type your message or ask a question...</string>
+    <string name="voice_input_prompt">Say something...</string>
+    <string name="settings_title">Settings</string>
+    <string name="chat_title">Chat</string>
+    <string name="memory_title">Memory</string>
+    <string name="error_message">An error occurred. Please try again.</string>
+    <string name="loading_message">Loading...</string>
+    <string name="no_messages">No messages yet.</string>
+    <string name="send_button">Send</string>
+    <string name="clear_memory">Clear Memory</string>
+    <string name="enable_voice_input">Enable Voice Input</string>
+    <string name="enable_memory_storage">Enable Memory Storage</string>
+    <string name="save_settings">Save Settings</string>
+</resources>

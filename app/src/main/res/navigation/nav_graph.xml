@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/chatFragment">
+
+    <fragment
+        android:id="@+id/chatFragment"
+        android:name="com.example.aisecretary.ui.chat.ChatFragment"
+        android:label="Chat"
+        tools:layout="@layout/fragment_chat">
+        
+        <action
+            android:id="@+id/action_chatFragment_to_settingsFragment"
+            app:destination="@id/settingsFragment" />
+            
+        <action
+            android:id="@+id/action_chatFragment_to_memoryFragment"
+            app:destination="@id/memoryFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.example.aisecretary.ui.settings.SettingsFragment"
+        android:label="Settings"
+        tools:layout="@layout/fragment_settings">
+        
+        <action
+            android:id="@+id/action_settingsFragment_to_chatFragment"
+            app:destination="@id/chatFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/memoryFragment"
+        android:name="com.example.aisecretary.ui.memory.MemoryFragment"
+        android:label="Memory"
+        tools:layout="@layout/fragment_memory">
+        
+        <action
+            android:id="@+id/action_memoryFragment_to_chatFragment"
+            app:destination="@id/chatFragment" />
+    </fragment>
+
+</navigation>
