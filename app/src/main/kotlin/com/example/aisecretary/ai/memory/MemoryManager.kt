@@ -6,6 +6,7 @@ import com.example.aisecretary.data.model.MemoryFact
 import com.example.aisecretary.data.model.Message
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import org.json.JSONObject
 import java.util.regex.Pattern
 
 class MemoryManager(
@@ -23,6 +24,9 @@ class MemoryManager(
         Pattern.compile("(?i)note that (?:my|the) (.+?) (?:is|are) (.+)"),
         Pattern.compile("(?i)my (.+?) (?:is|are) (.+)")
     )
+    
+    // Pattern to detect JSON objects in text
+    private val jsonPattern = Pattern.compile("\\{[^{}]*\\}")
 
     // Detect and extract memory from user message
     suspend fun detectAndExtractMemory(message: String): MemoryDetectionResult {
@@ -49,6 +53,101 @@ class MemoryManager(
         }
         
         return MemoryDetectionResult(wasMemoryDetected = false)
+    }
+    
+    // Detect and extract memory from LLM response
+    suspend fun detectAndExtractMemoryFromResponse(response: String): MemoryDetectionResult {
+        // First try to extract JSON content
+        val jsonMemory = extractJsonMemory(response)
+        if (jsonMemory != null) {
+            val (key, value) = jsonMemory
+            
+            val memoryFact = MemoryFact(
+                key = key,
+                value = value
+            )
+            
+            // Save to database
+            memoryFactDao.insertMemoryFact(memoryFact)
+            
+            return MemoryDetectionResult(
+                wasMemoryDetected = true,
+                memoryKey = key,
+                memoryValue = value,
+                isFromJson = true
+            )
+        }
+        
+        // Fallback to regex patterns if no JSON is found
+        for (pattern in rememberPatterns) {
+            val matcher = pattern.matcher(response)
+            if (matcher.find()) {
+                val key = matcher.group(1)?.trim() ?: continue
+                val value = matcher.group(2)?.trim() ?: continue
+                
+                val memoryFact = MemoryFact(
+                    key = key,
+                    value = value
+                )
+                
+                // Save to database
+                memoryFactDao.insertMemoryFact(memoryFact)
+                
+                return MemoryDetectionResult(
+                    wasMemoryDetected = true,
+                    memoryKey = key,
+                    memoryValue = value
+                )
+            }
+        }
+        
+        return MemoryDetectionResult(wasMemoryDetected = false)
+    }
+    
+    // Extract memory from JSON in the response
+    private fun extractJsonMemory(response: String): Pair<String, String>? {
+        try {
+            // Find potential JSON objects
+            val matcher = jsonPattern.matcher(response)
+            while (matcher.find()) {
+                val jsonString = matcher.group(0)
+                try {
+                    val jsonObject = JSONObject(jsonString)
+                    
+                    // Check if this JSON is a memory entry
+                    if (jsonObject.has("memory") || 
+                        jsonObject.has("remember") || 
+                        jsonObject.has("store")) {
+                        
+                        // Extract memory data
+                        val memoryObj = when {
+                            jsonObject.has("memory") -> jsonObject.optJSONObject("memory")
+                            jsonObject.has("remember") -> jsonObject.optJSONObject("remember")
+                            jsonObject.has("store") -> jsonObject.optJSONObject("store")
+                            else -> null
+                        }
+                        
+                        if (memoryObj != null && memoryObj.has("key") && memoryObj.has("value")) {
+                            val key = memoryObj.getString("key")
+                            val value = memoryObj.getString("value")
+                            return Pair(key, value)
+                        } else if (jsonObject.has("key") && jsonObject.has("value")) {
+                            // Direct key-value format
+                            val key = jsonObject.getString("key")
+                            val value = jsonObject.getString("value")
+                            return Pair(key, value)
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Invalid JSON, continue searching
+                    continue
+                }
+            }
+        } catch (e: Exception) {
+            // Error in JSON parsing, return null
+            return null
+        }
+        return null
     }
 
     // Get all memory facts
@@ -91,5 +190,6 @@ class MemoryManager(
 data class MemoryDetectionResult(
     val wasMemoryDetected: Boolean,
     val memoryKey: String = "",
-    val memoryValue: String = ""
+    val memoryValue: String = "",
+    val isFromJson: Boolean = false
 )

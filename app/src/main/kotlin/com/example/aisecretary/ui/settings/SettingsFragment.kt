@@ -5,23 +5,23 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.Switch
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.aisecretary.R
+import com.google.android.material.switchmaterial.SwitchMaterial
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class SettingsFragment : Fragment() {
 
     private lateinit var viewModel: SettingsViewModel
-    private lateinit var switchVoiceInput: Switch
-    private lateinit var switchMemoryStorage: Switch
-    private lateinit var switchWakeWord: Switch
-    private lateinit var switchAutoActivateMic: Switch
+    private lateinit var switchVoiceInput: SwitchMaterial
+    private lateinit var switchMemoryStorage: SwitchMaterial
+    private lateinit var switchWakeWord: SwitchMaterial
+    private lateinit var switchAutoActivateMic: SwitchMaterial
     private lateinit var buttonSaveSettings: Button
 
     override fun onCreateView(
