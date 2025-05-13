@@ -23,6 +23,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _memoryEnabled = MutableStateFlow(settingsManager.isMemoryEnabled())
     val memoryEnabled: StateFlow<Boolean> = _memoryEnabled.asStateFlow()
     
+    private val _wakeWordEnabled = MutableStateFlow(settingsManager.isWakeWordEnabled())
+    val wakeWordEnabled: StateFlow<Boolean> = _wakeWordEnabled.asStateFlow()
+    
     private val _settingsUpdated = MutableStateFlow(false)
     val settingsUpdated: StateFlow<Boolean> = _settingsUpdated.asStateFlow()
     
@@ -48,6 +51,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 _memoryEnabled.value = it
             }
         }
+        
+        viewModelScope.launch {
+            settingsManager.wakeWordEnabled.collectLatest {
+                _wakeWordEnabled.value = it
+            }
+        }
     }
     
     fun setVoiceInputEnabled(enabled: Boolean) {
@@ -62,10 +71,15 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         _memoryEnabled.value = enabled
     }
     
+    fun setWakeWordEnabled(enabled: Boolean) {
+        _wakeWordEnabled.value = enabled
+    }
+    
     fun saveSettings() {
         settingsManager.setVoiceOutputEnabled(_voiceInputEnabled.value)
         settingsManager.setVoiceOutputEnabled(_voiceOutputEnabled.value)
         settingsManager.setMemoryEnabled(_memoryEnabled.value)
+        settingsManager.setWakeWordEnabled(_wakeWordEnabled.value)
         _settingsUpdated.value = true
     }
     

@@ -20,6 +20,7 @@ class SettingsFragment : Fragment() {
     private lateinit var viewModel: SettingsViewModel
     private lateinit var switchVoiceInput: Switch
     private lateinit var switchMemoryStorage: Switch
+    private lateinit var switchWakeWord: Switch
     private lateinit var buttonSaveSettings: Button
 
     override fun onCreateView(
@@ -38,6 +39,7 @@ class SettingsFragment : Fragment() {
         // Initialize UI components
         switchVoiceInput = view.findViewById(R.id.switch_voice_input)
         switchMemoryStorage = view.findViewById(R.id.switch_memory_storage)
+        switchWakeWord = view.findViewById(R.id.switch_wake_word)
         buttonSaveSettings = view.findViewById(R.id.button_save_settings)
 
         setupListeners()
@@ -52,6 +54,10 @@ class SettingsFragment : Fragment() {
 
         switchMemoryStorage.setOnCheckedChangeListener { _, isChecked ->
             viewModel.setMemoryEnabled(isChecked)
+        }
+        
+        switchWakeWord.setOnCheckedChangeListener { _, isChecked ->
+            viewModel.setWakeWordEnabled(isChecked)
         }
 
         buttonSaveSettings.setOnClickListener {
@@ -72,6 +78,14 @@ class SettingsFragment : Fragment() {
             viewModel.memoryEnabled.collectLatest { enabled ->
                 if (switchMemoryStorage.isChecked != enabled) {
                     switchMemoryStorage.isChecked = enabled
+                }
+            }
+        }
+        
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.wakeWordEnabled.collectLatest { enabled ->
+                if (switchWakeWord.isChecked != enabled) {
+                    switchWakeWord.isChecked = enabled
                 }
             }
         }

@@ -11,13 +11,21 @@ import com.example.aisecretary.data.model.Message
 import com.example.aisecretary.data.repository.ChatRepository
 import com.example.aisecretary.data.repository.VoiceRepository
 import com.example.aisecretary.ai.voice.SpeechState
+import com.example.aisecretary.ai.voice.TtsState
 import com.example.aisecretary.di.AppModule
 import com.example.aisecretary.settings.SettingsManager
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.util.Queue
+import java.util.LinkedList
 
 class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -49,10 +57,25 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow<UiState>(UiState.Ready)
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
+    // Speech events
+    private val _speechEvents = MutableSharedFlow<SpeechEvent>()
+    val speechEvents: SharedFlow<SpeechEvent> = _speechEvents.asSharedFlow()
+
+    // Message queue for TTS
+    private val messageQueue: Queue<Message> = LinkedList()
+    private var isSpeaking = false
+    private var isFirstRequest = true
+    private var isBackgroundListening = false
+    private var wakeWordDetectionJob: Job? = null
+
+    // Wake word
+    private val WAKE_WORD = "hey astra"
+
     init {
         observeSpeechRecognition()
         loadMessages()
         observeSettings()
+        observeTTS()
     }
 
     private fun loadMessages() {
@@ -68,23 +91,92 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             voiceRepository.speechState.collectLatest { state ->
                 when (state) {
                     is SpeechState.Result -> {
-                        _currentInput.value = state.text
-                        _uiState.value = UiState.Ready
+                        val text = state.text
+                        _currentInput.value = text
+
+                        if (isBackgroundListening) {
+                            // Check for wake word
+                            if (text.lowercase().contains(WAKE_WORD)) {
+                                isBackgroundListening = false
+                                _speechEvents.emit(SpeechEvent.WakeWordDetected)
+                                _currentInput.value = ""
+                            } else {
+                                // Continue background listening
+                                startBackgroundListening()
+                            }
+                        } else {
+                            _uiState.value = UiState.Ready
+                            // Auto-send when speech recognition ends with a result
+                            if (text.isNotEmpty()) {
+                                _speechEvents.emit(SpeechEvent.SpeechEnded)
+                            }
+                        }
                     }
                     is SpeechState.PartialResult -> {
-                        _currentInput.value = state.text
+                        if (!isBackgroundListening) {
+                            _currentInput.value = state.text
+                        }
                     }
                     is SpeechState.Error -> {
-                        _uiState.value = UiState.Error(state.message)
+                        if (isBackgroundListening) {
+                            // Restart background listening on error
+                            startBackgroundListening()
+                        } else {
+                            _uiState.value = UiState.Error(state.message)
+                        }
                     }
                     is SpeechState.Listening -> {
-                        _uiState.value = UiState.Listening
+                        if (isBackgroundListening) {
+                            _uiState.value = UiState.BackgroundListening
+                        } else {
+                            _uiState.value = UiState.Listening
+                        }
                     }
                     is SpeechState.Processing -> {
-                        _uiState.value = UiState.Processing
+                        if (!isBackgroundListening) {
+                            _uiState.value = UiState.Processing(isInitialRequest = false)
+                        }
                     }
                     else -> {}
                 }
+            }
+        }
+    }
+
+    private fun observeTTS() {
+        viewModelScope.launch {
+            voiceRepository.ttsState.collectLatest { ttsState ->
+                when(ttsState) {
+                    is TtsState.Speaking -> {
+                        isSpeaking = true
+                        _uiState.value = UiState.Speaking
+                    }
+                    is TtsState.Ready -> {
+                        if (isSpeaking) {
+                            // Only emit speaking completed if we were speaking before
+                            isSpeaking = false
+                            _uiState.value = UiState.Ready
+                            _speechEvents.emit(SpeechEvent.SpeakingCompleted)
+                            processNextMessageInQueue()
+                        }
+                    }
+                    is TtsState.Error -> {
+                        isSpeaking = false
+                        _uiState.value = UiState.Error(ttsState.message)
+                        _speechEvents.emit(SpeechEvent.SpeakingCompleted)
+                        processNextMessageInQueue()
+                    }
+                    else -> {}
+                }
+            }
+        }
+    }
+
+    private fun processNextMessageInQueue() {
+        if (messageQueue.isNotEmpty() && !isSpeaking) {
+            val nextMessage = messageQueue.poll()
+            if (nextMessage != null) {
+                voiceRepository.speak(nextMessage.content)
             }
         }
     }
@@ -108,11 +200,56 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun startVoiceInput() {
+        stopBackgroundListening()
+        isBackgroundListening = false
         voiceRepository.startListening()
+    }
+
+    fun startBackgroundListening() {
+        // Only start background listening if wake word is enabled in settings
+        if (settingsManager.isWakeWordEnabled()) {
+            isBackgroundListening = true
+            wakeWordDetectionJob?.cancel()
+            wakeWordDetectionJob = viewModelScope.launch {
+                // A short delay to avoid rapid re-triggering
+                delay(500)
+                voiceRepository.startListening()
+            }
+            _uiState.value = UiState.BackgroundListening
+        } else {
+            // If wake word is disabled, just go to ready state
+            isBackgroundListening = false
+            _uiState.value = UiState.Ready
+        }
+    }
+
+    fun stopBackgroundListening() {
+        isBackgroundListening = false
+        wakeWordDetectionJob?.cancel()
+        wakeWordDetectionJob = null
     }
 
     fun stopVoiceInput() {
         voiceRepository.stopListening()
+    }
+
+    fun stopSpeaking() {
+        voiceRepository.stopSpeaking()
+        messageQueue.clear()
+        isSpeaking = false
+        _uiState.value = UiState.Ready
+    }
+
+    fun readMessage(message: Message) {
+        if (!message.isFromUser && settingsManager.isVoiceOutputEnabled()) {
+            if (isSpeaking) {
+                // Add to queue if already speaking
+                messageQueue.add(message)
+            } else {
+                // Start speaking immediately if not already speaking
+                voiceRepository.speak(message.content)
+            }
+        }
     }
 
     fun sendMessage() {
@@ -127,7 +264,14 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             viewModelScope.launch {
                 chatRepository.saveMessage(userMessage)
                 _currentInput.value = ""
-                _uiState.value = UiState.Processing
+                
+                // Check if this is the first request
+                if (isFirstRequest) {
+                    _uiState.value = UiState.Processing(isInitialRequest = true)
+                    _speechEvents.emit(SpeechEvent.InitialRequestStarted)
+                } else {
+                    _uiState.value = UiState.Processing(isInitialRequest = false)
+                }
 
                 chatRepository.processUserMessage(inputText).fold(
                     onSuccess = { response ->
@@ -138,18 +282,22 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
                         chatRepository.saveMessage(assistantMessage)
 
-                        // Always try to speak the response, regardless of the setting
-                        // This is a temporary fix to check if TTS is working at all
-                        voiceRepository.speak(response)
+                        if (isFirstRequest) {
+                            isFirstRequest = false
+                            _speechEvents.emit(SpeechEvent.InitialRequestCompleted)
+                        }
 
-                        // Comment this out for testing
-                        // if (settingsManager.isVoiceOutputEnabled()) {
-                        //     voiceRepository.speak(response)
-                        // }
-
+                        // Emit event for new message received
+                        _speechEvents.emit(SpeechEvent.NewMessageReceived(assistantMessage))
+                        
                         _uiState.value = UiState.Ready
                     },
                     onFailure = { error ->
+                        if (isFirstRequest) {
+                            isFirstRequest = false
+                            _speechEvents.emit(SpeechEvent.InitialRequestCompleted)
+                        }
+                        
                         _uiState.value = UiState.Error("Error: ${error.message}")
 
                         val errorMessage = Message(
@@ -157,6 +305,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                             isFromUser = false
                         )
                         chatRepository.saveMessage(errorMessage)
+                        
+                        // Still try to read the error message
+                        _speechEvents.emit(SpeechEvent.NewMessageReceived(errorMessage))
                     }
                 )
             }
@@ -166,6 +317,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     fun clearConversation() {
         viewModelScope.launch {
             chatRepository.clearAllMessages()
+            stopSpeaking()
             // Messages will be cleared automatically through the Flow
         }
     }
@@ -173,12 +325,34 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
         super.onCleared()
         voiceRepository.cleanup()
+        stopSpeaking()
+        stopBackgroundListening()
+    }
+
+    // Methods to check current status
+    fun isBackgroundListeningActive(): Boolean {
+        return isBackgroundListening
+    }
+    
+    fun isSpeakingOrProcessing(): Boolean {
+        return isSpeaking || _uiState.value is UiState.Processing || _uiState.value is UiState.Speaking
     }
 }
 
 sealed class UiState {
     object Ready : UiState()
     object Listening : UiState()
-    object Processing : UiState()
+    data class Processing(val isInitialRequest: Boolean = false) : UiState()
     data class Error(val message: String) : UiState()
+    object Speaking : UiState()
+    object BackgroundListening : UiState()
+}
+
+sealed class SpeechEvent {
+    object SpeechEnded : SpeechEvent()
+    data class NewMessageReceived(val message: Message) : SpeechEvent()
+    object InitialRequestStarted : SpeechEvent()
+    object InitialRequestCompleted : SpeechEvent()
+    object SpeakingCompleted : SpeechEvent()
+    object WakeWordDetected : SpeechEvent()
 }

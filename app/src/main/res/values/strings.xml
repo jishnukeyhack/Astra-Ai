@@ -14,4 +14,13 @@
     <string name="enable_voice_input">Enable Voice Input</string>
     <string name="enable_memory_storage">Enable Memory Storage</string>
     <string name="save_settings">Save Settings</string>
+    <string name="speech_stopped">Speech stopped</string>
+    <string name="initial_request_message">Processing first request, please wait...</string>
+    <string name="triple_tap_hint">Triple tap screen to stop speaking</string>
+    <string name="speaking">Speaking...</string>
+    <string name="waiting_for_wake_word">Listening for "Hey Astra"...</string>
+    <string name="wake_word_detected">Hey Astra detected!</string>
+    <string name="enable_background_listening">Enable background listening</string>
+    <string name="background_listening_description">Listen for "Hey Astra" wake word</string>
+    <string name="cancel">Cancel</string>
 </resources>

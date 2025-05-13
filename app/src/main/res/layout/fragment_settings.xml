@@ -16,18 +16,37 @@
         android:id="@+id/switch_voice_input"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
         android:text="@string/enable_voice_input" />
 
     <Switch
         android:id="@+id/switch_memory_storage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
         android:text="@string/enable_memory_storage" />
+    
+    <Switch
+        android:id="@+id/switch_wake_word"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/enable_background_listening" />
+    
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/background_listening_description"
+        android:textSize="12sp"
+        android:textColor="@color/textSecondary"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="4dp" />
 
     <Button
         android:id="@+id/button_save_settings"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
         android:text="@string/save_settings" />
 
 </LinearLayout>
