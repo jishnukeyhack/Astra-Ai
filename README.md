@@ -87,7 +87,7 @@ ai-secretary-app
 ## Setup Instructions
 1. Clone the repository:
    ```
-   git clone <repository-url>
+   git clone https://github.com/A-Akhil/Astra-Ai.git
    ```
 2. Open the project in your preferred IDE.
 3. Ensure you have the necessary SDKs and dependencies installed.
@@ -101,5 +101,15 @@ ai-secretary-app
 ## Contributing
 Contributions are welcome! Please submit a pull request or open an issue for any enhancements or bug fixes.
 
+[![Contributors](https://contrib.rocks/image?repo=A-Akhil/CertiMaster)](https://github.com/A-Akhil/CertiMaster/graphs/contributors)
+
 ## License
 This project is licensed under the MIT License. See the LICENSE file for details.
+
+<div align="center">
+
+## Please support the development by donating.
+
+[![BuyMeACoffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/aakhil)
+
+</div>
