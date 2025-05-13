@@ -21,6 +21,7 @@ class SettingsFragment : Fragment() {
     private lateinit var switchVoiceInput: Switch
     private lateinit var switchMemoryStorage: Switch
     private lateinit var switchWakeWord: Switch
+    private lateinit var switchAutoActivateMic: Switch
     private lateinit var buttonSaveSettings: Button
 
     override fun onCreateView(
@@ -40,6 +41,7 @@ class SettingsFragment : Fragment() {
         switchVoiceInput = view.findViewById(R.id.switch_voice_input)
         switchMemoryStorage = view.findViewById(R.id.switch_memory_storage)
         switchWakeWord = view.findViewById(R.id.switch_wake_word)
+        switchAutoActivateMic = view.findViewById(R.id.switch_auto_activate_mic)
         buttonSaveSettings = view.findViewById(R.id.button_save_settings)
 
         setupListeners()
@@ -58,6 +60,10 @@ class SettingsFragment : Fragment() {
         
         switchWakeWord.setOnCheckedChangeListener { _, isChecked ->
             viewModel.setWakeWordEnabled(isChecked)
+        }
+        
+        switchAutoActivateMic.setOnCheckedChangeListener { _, isChecked ->
+            viewModel.setAutoActivateMicEnabled(isChecked)
         }
 
         buttonSaveSettings.setOnClickListener {
@@ -86,6 +92,14 @@ class SettingsFragment : Fragment() {
             viewModel.wakeWordEnabled.collectLatest { enabled ->
                 if (switchWakeWord.isChecked != enabled) {
                     switchWakeWord.isChecked = enabled
+                }
+            }
+        }
+        
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.autoActivateMicEnabled.collectLatest { enabled ->
+                if (switchAutoActivateMic.isChecked != enabled) {
+                    switchAutoActivateMic.isChecked = enabled
                 }
             }
         }

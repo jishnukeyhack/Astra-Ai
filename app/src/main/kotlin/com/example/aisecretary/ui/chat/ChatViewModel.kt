@@ -327,6 +327,14 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         voiceRepository.cleanup()
         stopSpeaking()
         stopBackgroundListening()
+        
+        // Unload the model when the app is exiting
+        viewModelScope.launch {
+            llamaClient.unloadModel().onFailure { error ->
+                // Just log the error, don't need to show to user at app exit
+                android.util.Log.e("ChatViewModel", "Failed to unload model: ${error.message}")
+            }
+        }
     }
 
     // Methods to check current status
@@ -336,6 +344,17 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     
     fun isSpeakingOrProcessing(): Boolean {
         return isSpeaking || _uiState.value is UiState.Processing || _uiState.value is UiState.Speaking
+    }
+    
+    /**
+     * Unloads the model from memory
+     */
+    fun unloadModel() {
+        viewModelScope.launch {
+            llamaClient.unloadModel().onFailure { error ->
+                android.util.Log.e("ChatViewModel", "Failed to unload model: ${error.message}")
+            }
+        }
     }
 }
 

@@ -22,5 +22,7 @@
     <string name="wake_word_detected">Hey Astra detected!</string>
     <string name="enable_background_listening">Enable background listening</string>
     <string name="background_listening_description">Listen for "Hey Astra" wake word</string>
+    <string name="auto_activate_mic">Auto-activate microphone after speaking</string>
+    <string name="auto_activate_mic_description">Automatically start listening after Astra finishes speaking</string>
     <string name="cancel">Cancel</string>
 </resources>

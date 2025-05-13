@@ -7,15 +7,21 @@ import com.example.aisecretary.data.model.ConversationContext
 import com.example.aisecretary.data.model.MemoryFact
 import com.example.aisecretary.data.model.Message
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicBoolean
 
 class LlamaClient(private val retrofit: Retrofit) {
 
     private val ollamaService: OllamaService by lazy {
         retrofit.create(OllamaService::class.java)
     }
+    
+    // Track the last error time to implement waiting period
+    private var lastErrorTime: Long = 0
+    private val isRetrying = AtomicBoolean(false)
 
     /**
      * Sends a message to the LLM and returns the response
@@ -26,6 +32,20 @@ class LlamaClient(private val retrofit: Retrofit) {
         systemPrompt: String = DEFAULT_SYSTEM_PROMPT
     ): Result<String> = withContext(Dispatchers.IO) {
         try {
+            // Check if we need to wait after an error
+            val currentTime = System.currentTimeMillis()
+            if (currentTime - lastErrorTime < 60000 && lastErrorTime > 0) {
+                val waitTimeRemaining = 60000 - (currentTime - lastErrorTime)
+                if (waitTimeRemaining > 0 && !isRetrying.getAndSet(true)) {
+                    try {
+                        // Wait the remaining time of the 1-minute cooling period
+                        delay(waitTimeRemaining)
+                    } finally {
+                        isRetrying.set(false)
+                    }
+                }
+            }
+            
             // Prepare the full prompt with memory and conversation history
             val fullSystemPrompt = buildEnhancedSystemPrompt(
                 systemPrompt, 
@@ -41,21 +61,54 @@ class LlamaClient(private val retrofit: Retrofit) {
                 options = OllamaOptions(
                     temperature = 0.7f,
                     maxTokens = 800
-                )
+                ),
+                keep_alive = 3600 // Keep model in memory for 1 hour
             )
 
             val response = ollamaService.generateCompletion(request)
             if (response.isSuccessful) {
+                // Reset error time on success
+                lastErrorTime = 0
+                
                 val ollamaResponse = response.body()
                 if (ollamaResponse != null) {
                     return@withContext Result.success(ollamaResponse.response)
                 } else {
+                    // Record error time
+                    lastErrorTime = System.currentTimeMillis()
                     return@withContext Result.failure(IOException("Empty response body"))
                 }
             } else {
+                // Record error time
+                lastErrorTime = System.currentTimeMillis()
                 return@withContext Result.failure(
                     IOException("API error: ${response.code()} ${response.message()}")
                 )
+            }
+        } catch (e: Exception) {
+            // Record error time
+            lastErrorTime = System.currentTimeMillis()
+            return@withContext Result.failure(e)
+        }
+    }
+
+    /**
+     * Unloads the model from memory
+     */
+    suspend fun unloadModel(): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val request = OllamaRequest(
+                model = BuildConfig.LLAMA_MODEL_NAME,
+                prompt = "",
+                stream = false,
+                keep_alive = 0 // Immediately unload the model
+            )
+            
+            val response = ollamaService.generateCompletion(request)
+            return@withContext if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(IOException("Failed to unload model: ${response.code()} ${response.message()}"))
             }
         } catch (e: Exception) {
             return@withContext Result.failure(e)

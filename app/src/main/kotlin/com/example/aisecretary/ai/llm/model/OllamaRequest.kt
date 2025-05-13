@@ -7,7 +7,8 @@ data class OllamaRequest(
     val prompt: String,
     val system: String? = null,
     val stream: Boolean = false,
-    val options: OllamaOptions? = OllamaOptions()
+    val options: OllamaOptions? = OllamaOptions(),
+    val keep_alive: Any? = null
 )
 
 data class OllamaOptions(

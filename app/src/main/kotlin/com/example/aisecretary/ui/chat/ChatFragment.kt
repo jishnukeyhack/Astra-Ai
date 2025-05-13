@@ -40,8 +40,6 @@ class ChatFragment : Fragment() {
     private lateinit var rootLayout: ConstraintLayout
     private lateinit var gestureDetector: GestureDetectorCompat
     
-    private var autoActivateMic = true
-    
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -242,11 +240,9 @@ class ChatFragment : Fragment() {
             }
             is SpeechEvent.SpeakingCompleted -> {
                 // Auto-activate mic after speaking completes
-                if (autoActivateMic) {
-                    // Go back to background listening mode if enabled
-                    if (settingsManager.isWakeWordEnabled()) {
-                        startBackgroundListening()
-                    }
+                if (settingsManager.isAutoActivateMicEnabled()) {
+                    // Start active voice input instead of just going back to background listening
+                    checkMicrophonePermissionAndListen()
                 }
             }
             is SpeechEvent.WakeWordDetected -> {
@@ -404,6 +400,12 @@ class ChatFragment : Fragment() {
         viewModel.stopVoiceInput()
         viewModel.stopSpeaking()
         viewModel.stopBackgroundListening()
+        
+        // Check if the app is finishing (truly exiting)
+        if (activity?.isFinishing == true) {
+            // If the app is exiting, unload the model
+            viewModel.unloadModel()
+        }
     }
 }
 

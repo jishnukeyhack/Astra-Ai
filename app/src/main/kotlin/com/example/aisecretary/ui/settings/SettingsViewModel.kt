@@ -26,6 +26,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _wakeWordEnabled = MutableStateFlow(settingsManager.isWakeWordEnabled())
     val wakeWordEnabled: StateFlow<Boolean> = _wakeWordEnabled.asStateFlow()
     
+    private val _autoActivateMicEnabled = MutableStateFlow(settingsManager.isAutoActivateMicEnabled())
+    val autoActivateMicEnabled: StateFlow<Boolean> = _autoActivateMicEnabled.asStateFlow()
+    
     private val _settingsUpdated = MutableStateFlow(false)
     val settingsUpdated: StateFlow<Boolean> = _settingsUpdated.asStateFlow()
     
@@ -57,6 +60,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 _wakeWordEnabled.value = it
             }
         }
+        
+        viewModelScope.launch {
+            settingsManager.autoActivateMic.collectLatest {
+                _autoActivateMicEnabled.value = it
+            }
+        }
     }
     
     fun setVoiceInputEnabled(enabled: Boolean) {
@@ -75,11 +84,16 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         _wakeWordEnabled.value = enabled
     }
     
+    fun setAutoActivateMicEnabled(enabled: Boolean) {
+        _autoActivateMicEnabled.value = enabled
+    }
+    
     fun saveSettings() {
         settingsManager.setVoiceOutputEnabled(_voiceInputEnabled.value)
         settingsManager.setVoiceOutputEnabled(_voiceOutputEnabled.value)
         settingsManager.setMemoryEnabled(_memoryEnabled.value)
         settingsManager.setWakeWordEnabled(_wakeWordEnabled.value)
+        settingsManager.setAutoActivateMicEnabled(_autoActivateMicEnabled.value)
         _settingsUpdated.value = true
     }
     

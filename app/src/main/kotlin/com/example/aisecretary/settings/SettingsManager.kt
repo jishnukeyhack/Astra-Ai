@@ -29,6 +29,12 @@ class SettingsManager(context: Context) {
         preferences.getBoolean(KEY_WAKE_WORD_ENABLED, false)
     )
     val wakeWordEnabled: StateFlow<Boolean> = _wakeWordEnabled.asStateFlow()
+    
+    // Auto-activate microphone after speaking - enabled by default
+    private val _autoActivateMic = MutableStateFlow(
+        preferences.getBoolean(KEY_AUTO_ACTIVATE_MIC, true)
+    )
+    val autoActivateMic: StateFlow<Boolean> = _autoActivateMic.asStateFlow()
 
     fun isMemoryEnabled(): Boolean {
         return preferences.getBoolean(KEY_MEMORY_ENABLED, true)
@@ -56,11 +62,21 @@ class SettingsManager(context: Context) {
         preferences.edit().putBoolean(KEY_WAKE_WORD_ENABLED, enabled).apply()
         _wakeWordEnabled.value = enabled
     }
+    
+    fun isAutoActivateMicEnabled(): Boolean {
+        return preferences.getBoolean(KEY_AUTO_ACTIVATE_MIC, true)
+    }
+    
+    fun setAutoActivateMicEnabled(enabled: Boolean) {
+        preferences.edit().putBoolean(KEY_AUTO_ACTIVATE_MIC, enabled).apply()
+        _autoActivateMic.value = enabled
+    }
 
     companion object {
         private const val PREFS_NAME = "secretary_settings"
         private const val KEY_MEMORY_ENABLED = "memory_enabled"
         private const val KEY_VOICE_OUTPUT_ENABLED = "voice_output_enabled"
         private const val KEY_WAKE_WORD_ENABLED = "wake_word_enabled"
+        private const val KEY_AUTO_ACTIVATE_MIC = "auto_activate_mic"
     }
 } 
