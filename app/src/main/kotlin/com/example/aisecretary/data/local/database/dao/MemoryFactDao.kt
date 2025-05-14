@@ -2,14 +2,19 @@ package com.example.aisecretary.data.local.database.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.example.aisecretary.data.model.MemoryFact
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MemoryFactDao {
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMemoryFact(memoryFact: MemoryFact): Long
+    
+    @Update
+    suspend fun updateMemoryFact(memoryFact: MemoryFact)
     
     @Query("SELECT * FROM memory_facts ORDER BY timestamp DESC")
     fun getAllMemoryFacts(): Flow<List<MemoryFact>>

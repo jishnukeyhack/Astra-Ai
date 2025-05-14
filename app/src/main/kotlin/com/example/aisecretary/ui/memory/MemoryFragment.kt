@@ -126,16 +126,29 @@ class MemoryFragment : Fragment(), MemoryAdapter.MemoryItemListener {
             editTextValue.setText(value)
         }
         
-        AlertDialog.Builder(requireContext())
+        val dialog = AlertDialog.Builder(requireContext())
             .setTitle(if (memoryId == 0L) "Add Memory" else "Edit Memory")
             .setView(dialogView)
             .setPositiveButton("Save") { _, _ ->
                 val keyText = editTextKey.text.toString()
                 val valueText = editTextValue.text.toString()
+                
+                if (keyText.isBlank() || valueText.isBlank()) {
+                    Toast.makeText(context, "Key and value cannot be empty", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                
                 viewModel.addOrUpdateMemory(keyText, valueText, memoryId)
+                Toast.makeText(
+                    context, 
+                    if (memoryId == 0L) "Memory added" else "Memory updated", 
+                    Toast.LENGTH_SHORT
+                ).show()
             }
             .setNegativeButton("Cancel", null)
-            .show()
+            .create()
+            
+        dialog.show()
     }
     
     private fun showClearConfirmationDialog() {

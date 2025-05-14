@@ -180,6 +180,11 @@ class MemoryManager(
         return memoryFactDao.searchMemoryFacts(query).first()
     }
 
+    // Update an existing memory fact
+    suspend fun updateMemory(memoryFact: MemoryFact) {
+        memoryFactDao.updateMemoryFact(memoryFact)
+    }
+
     // Delete a specific memory fact
     suspend fun deleteMemory(id: Long) {
         memoryFactDao.deleteMemoryFact(id)

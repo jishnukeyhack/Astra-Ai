@@ -22,8 +22,11 @@ class SecretaryApplication : Application() {
         Room.databaseBuilder(
             applicationContext,
             AppDatabase::class.java,
-            "secretary_database"
-        ).build()
+            "app_database"
+        )
+        .addMigrations(AppDatabase.MIGRATION_1_2)
+        .fallbackToDestructiveMigration() // This will wipe data if migration fails, but prevents crashes
+        .build()
     }
     
     // LlamaClient for global access (to unload model if needed)

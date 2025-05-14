@@ -82,12 +82,17 @@ class MemoryViewModel(application: Application) : AndroidViewModel(application) 
         val memoryFact = MemoryFact(
             id = id,
             key = key,
-            value = value
+            value = value,
+            timestamp = System.currentTimeMillis()
         )
         
         viewModelScope.launch {
             try {
-                database.memoryFactDao().insertMemoryFact(memoryFact)
+                if (id > 0) {
+                    database.memoryFactDao().updateMemoryFact(memoryFact)
+                } else {
+                    database.memoryFactDao().insertMemoryFact(memoryFact)
+                }
                 loadMemories()
                 _error.value = null
             } catch (e: Exception) {
