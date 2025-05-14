@@ -16,8 +16,19 @@ object AppModule {
     
     // Retrofit instance
     fun provideRetrofit(): Retrofit {
+        // Use a default URL if the BuildConfig.OLLAMA_BASE_URL is empty
+        val baseUrl = if (BuildConfig.OLLAMA_BASE_URL.isBlank()) {
+            "http://localhost:11434/"
+        } else {
+            // Ensure the URL ends with a slash
+            if (BuildConfig.OLLAMA_BASE_URL.endsWith("/")) 
+                BuildConfig.OLLAMA_BASE_URL 
+            else 
+                "${BuildConfig.OLLAMA_BASE_URL}/"
+        }
+        
         return Retrofit.Builder()
-            .baseUrl(BuildConfig.OLLAMA_BASE_URL)
+            .baseUrl(baseUrl)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }

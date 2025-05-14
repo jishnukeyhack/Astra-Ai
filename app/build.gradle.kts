@@ -11,6 +11,15 @@ val secretsFile = rootProject.file("secrets.properties")
 val secretsProperties = Properties()
 if (secretsFile.exists()) {
     secretsFile.inputStream().use { secretsProperties.load(it) }
+} else {
+    logger.warn("Warning: secrets.properties file not found! Using default values.")
+}
+
+// Function to safely get properties with defaults
+fun getSecretProperty(key: String, defaultValue: String): String {
+    val value = secretsProperties.getProperty(key, defaultValue)
+    // Ensure the value is not empty, use default if it is
+    return if (value.isBlank()) defaultValue else value
 }
 
 android {
@@ -25,8 +34,8 @@ android {
         versionName = "1.0"
         
         // Add secrets as BuildConfig fields
-        buildConfigField("String", "OLLAMA_BASE_URL", "\"${secretsProperties.getProperty("OLLAMA_BASE_URL", "")}\"")
-        buildConfigField("String", "LLAMA_MODEL_NAME", "\"${secretsProperties.getProperty("LLAMA_MODEL_NAME", "llama3:8b")}\"")
+        buildConfigField("String", "OLLAMA_BASE_URL", "\"${getSecretProperty("OLLAMA_BASE_URL", "http://localhost:11434")}\"")
+        buildConfigField("String", "LLAMA_MODEL_NAME", "\"${getSecretProperty("LLAMA_MODEL_NAME", "llama3:8b")}\"")
         
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
