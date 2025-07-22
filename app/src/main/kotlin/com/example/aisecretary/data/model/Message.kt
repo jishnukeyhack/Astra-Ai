@@ -10,5 +10,8 @@ data class Message(
     val content: String,
     val isFromUser: Boolean,
     val timestamp: Long = System.currentTimeMillis(),
-    val isImportantInfo: Boolean = false
+    val isImportantInfo: Boolean = false,
+    // NEW Streaming Properties
+    val isStreaming: Boolean = false,
+    val streamingComplete: Boolean = false
 )
