@@ -90,8 +90,25 @@ ai-secretary-app
    git clone https://github.com/A-Akhil/Astra-Ai.git
    ```
 2. Open the project in your preferred IDE.
-3. Ensure you have the necessary SDKs and dependencies installed.
-4. Build and run the application on an Android device or emulator.
+3. Copy `secrets.properties.template` to `secrets.properties` and configure:
+   ```properties
+   OLLAMA_BASE_URL=https://your-ollama-server-url
+   LLAMA_MODEL_NAME=llama3:8b
+   ```
+4. Ensure you have the necessary SDKs and dependencies installed.
+5. Build and run the application on an Android device or emulator.
+
+### Model Configuration
+The LLM model is configurable in `secrets.properties`. For low-RAM systems, use lightweight alternatives:
+
+```properties
+# Lightweight options (requires less RAM):
+LLAMA_MODEL_NAME=phi3           
+LLAMA_MODEL_NAME=llama3.2:1b    
+LLAMA_MODEL_NAME=qwen2.5:0.5b   
+LLAMA_MODEL_NAME=gemma2:2b      
+LLAMA_MODEL_NAME=llama3:8b
+```
 
 ## Usage
 - Launch the application and interact with the AI Secretary using voice or text.
