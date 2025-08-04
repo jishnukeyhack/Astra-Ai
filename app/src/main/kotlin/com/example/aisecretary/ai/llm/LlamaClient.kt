@@ -147,7 +147,7 @@ class LlamaClient(private val retrofit: Retrofit) {
                 keep_alive = 3600
             )
 
-            val response = ollamaService.generateStreamingCompletion(request)
+            val response = ollamaService.generateStreamingResponse(request)
             if (response.isSuccessful) {
                 lastErrorTime = 0
                 
