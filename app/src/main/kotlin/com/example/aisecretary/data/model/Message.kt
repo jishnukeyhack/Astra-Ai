@@ -13,7 +13,7 @@ data class Message(
     val isImportantInfo: Boolean = false,
     // NEW Streaming Properties
     val isStreaming: Boolean = false,
-    val streamingComplete: Boolean = false
+    val streamingComplete: Boolean = false,
     val hasError: Boolean = false,
     val errorMessage: String? = null
 )
