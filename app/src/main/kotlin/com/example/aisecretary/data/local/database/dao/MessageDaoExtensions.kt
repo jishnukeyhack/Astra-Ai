@@ -43,7 +43,7 @@ suspend fun MessageDao.updateStreamingMessage(
             isStreaming = !isComplete,
             timestamp = if (isComplete) System.currentTimeMillis() else existingMessage.timestamp
         )
-        updateMessage(updatedMessage)
+        insertMessage(updatedMessage)
         emit(updatedMessage)
     }
 }
