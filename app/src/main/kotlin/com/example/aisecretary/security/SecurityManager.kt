@@ -88,7 +88,7 @@ class SecurityManager(private val context: Context) {
      * Check if biometric authentication is available
      */
     fun isBiometricAvailable(): BiometricAuthStatus {
-        return when (BiometricManager.from(context).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)) {
+        return when (BiometricManager.from(context).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)) {
             BiometricManager.BIOMETRIC_SUCCESS -> BiometricAuthStatus.AVAILABLE
             BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> BiometricAuthStatus.NO_HARDWARE
             BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> BiometricAuthStatus.HARDWARE_UNAVAILABLE
