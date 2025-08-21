@@ -58,7 +58,11 @@ class PrivacyManager(
         
         // Remove or replace personally identifiable information
         anonymizedData = anonymizedData.replace(Regex("\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b"), "[EMAIL_REDACTED]")
-        anonymizedData = anonymizedData.replace(Regex("\\b\\d{3}-\\d{3}-\\d{4}\\b"), "[PHONE_REDACTED]")
+        // Match international phone numbers (e.g. +44 1234 567890, (123) 456-7890, 123-456-7890, +1-123-456-7890, etc.)
+        anonymizedData = anonymizedData.replace(
+            Regex("""(?:(?:\+|00)\d{1,3}[\s-]?)?(?:\(?\d{1,4}\)?[\s-]?){2,4}\d{2,4}"""),
+            "[PHONE_REDACTED]"
+        )
         anonymizedData = anonymizedData.replace(Regex("\\b\\d{4}\\s?\\d{4}\\s?\\d{4}\\s?\\d{4}\\b"), "[CARD_REDACTED]")
         anonymizedData = anonymizedData.replace(Regex("\\b\\d{3}-\\d{2}-\\d{4}\\b"), "[SSN_REDACTED]")
         
