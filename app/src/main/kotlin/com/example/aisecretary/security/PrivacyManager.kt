@@ -167,7 +167,51 @@ class PrivacyManager(
             }
         }
     }
+        // Securely delete cache directories
+        secureDeleteRecursively(context.cacheDir)
+        
+        // Securely delete specific app directories
+        val appDataDir = File(context.filesDir.parent)
+        appDataDir.listFiles()?.forEach { file ->
+            if (file.name != "lib") { // Keep native libraries
+                secureDeleteRecursively(file)
+            }
+        }
+    }
 
+    /**
+     * Securely deletes a file or directory recursively by overwriting file contents before deletion.
+     */
+    private fun secureDeleteRecursively(file: File) {
+        if (file.isDirectory) {
+            file.listFiles()?.forEach { child ->
+                secureDeleteRecursively(child)
+            }
+        } else if (file.isFile) {
+            // Overwrite file contents before deletion
+            try {
+                val length = file.length()
+                if (length > 0) {
+                    val random = java.security.SecureRandom()
+                    val buffer = ByteArray(4096)
+                    FileWriter(file).use { writer ->
+                        var bytesWritten = 0L
+                        while (bytesWritten < length) {
+                            random.nextBytes(buffer)
+                            val toWrite = minOf(buffer.size.toLong(), length - bytesWritten).toInt()
+                            writer.write(String(buffer, 0, toWrite))
+                            bytesWritten += toWrite
+                        }
+                        writer.flush()
+                    }
+                }
+            } catch (e: Exception) {
+                // Log or handle error if needed
+            }
+        }
+        // Delete file or directory
+        file.deleteRecursively()
+    }
     private suspend fun getConversationCount(): Int {
         // This would integrate with your message DAO
         return 0 // Placeholder
