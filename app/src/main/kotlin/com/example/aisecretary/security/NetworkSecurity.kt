@@ -37,7 +37,7 @@ class NetworkSecurity {
     fun createSecureOkHttpClient(baseUrl: String): OkHttpClient {
         // Certificate pinning for enhanced security
         val certificatePinner = CertificatePinner.Builder()
-            .add(baseUrl, "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=") // Replace with actual certificate hash
+            .add(baseUrl, "sha256/<ACTUAL_BASE64_SHA256_HASH_HERE>") // Use the actual certificate hash
             .build()
 
         return OkHttpClient.Builder()
