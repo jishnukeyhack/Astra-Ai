@@ -86,4 +86,3 @@ class BiometricAuthActivity : AppCompatActivity() {
         // Prevent going back from biometric auth
         finish()
     // Removed deprecated onBackPressed override; handled via OnBackPressedDispatcher in onCreate()
-}
