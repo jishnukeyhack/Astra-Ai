@@ -206,7 +206,15 @@ class PrivacyManager(
                             writer.write(String(buffer, 0, toWrite))
                             bytesWritten += toWrite
                         }
-                        writer.flush()
+                    FileOutputStream(file).use { output ->
+                        var bytesWritten = 0L
+                        while (bytesWritten < length) {
+                            random.nextBytes(buffer)
+                            val toWrite = minOf(buffer.size.toLong(), length - bytesWritten).toInt()
+                            output.write(buffer, 0, toWrite)
+                            bytesWritten += toWrite
+                        }
+                        output.flush()
                     }
                 }
             } catch (e: Exception) {
